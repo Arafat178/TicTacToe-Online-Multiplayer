@@ -34,11 +34,12 @@ function setStatus(msg) {
 // ===== STEP 4: Create Room =====
 function createRoom() {
   const customId = document.getElementById("roomIdInput").value.trim();
-  roomId = customId || Math.random().toString(36).substr(2, 6); // use input or random
+  roomId = customId || Math.random().toString(36).substr(2, 6); // custom or random ID
 
   player = "X";
   myTurn = true;
 
+  // Save room in database
   db.ref("rooms/" + roomId).set({
     board: Array(9).fill(""),
     turn: "X",
@@ -46,6 +47,7 @@ function createRoom() {
   });
 
   setStatus("Room created! Share this ID: " + roomId);
+  console.log("Room created:", roomId);
   listenToRoom();
 }
 
@@ -65,12 +67,13 @@ function joinRoom() {
     }
 
     player = "O"; // joiner
+    myTurn = false;
     setStatus("Joined room: " + roomId);
     listenToRoom();
   });
 }
 
-// ===== STEP 6: Listen for updates =====
+// ===== STEP 6: Listen to Firebase =====
 function listenToRoom() {
   db.ref("rooms/" + roomId).on("value", snapshot => {
     const data = snapshot.val();
@@ -98,6 +101,7 @@ function makeMove(index) {
     if (current === "") return player;
     return current;
   }, () => {
+    // Update turn and check winner
     db.ref("rooms/" + roomId).once("value").then(snapshot => {
       const data = snapshot.val();
       const winner = checkWinner(data.board);
