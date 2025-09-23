@@ -52,10 +52,18 @@ function joinRoom() {
   roomId = document.getElementById("roomIdInput").value.trim();
   if (!roomId) return alert("Enter a room ID!");
 
-  player = "O";
-  myTurn = false;
-  setStatus("Joined room: " + roomId);
-  listenToRoom();
+  db.ref("rooms/" + roomId).once("value").then(snapshot => {
+    if (!snapshot.exists()) {
+      alert("Room not found!");
+      return;
+    }
+
+    player = "O";
+    setStatus("Joined room: " + roomId);
+
+    // turn ডাটাবেস থেকে আসবে, আমরা এখানে myTurn সেট করবো না
+    listenToRoom();
+  });
 }
 
 // ====== STEP 5: Listen for updates from Firebase ======
@@ -128,4 +136,5 @@ function checkWinner(board) {
   if (board.every(cell => cell !== "")) return "Draw";
   return null;
 }
+
 
