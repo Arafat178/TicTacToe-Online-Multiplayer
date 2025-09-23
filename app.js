@@ -52,16 +52,19 @@ function joinRoom() {
   roomId = document.getElementById("roomIdInput").value.trim();
   if (!roomId) return alert("Enter a room ID!");
 
+  console.log("Trying to join room:", roomId);
+
   db.ref("rooms/" + roomId).once("value").then((snapshot) => {
-    if (snapshot.exists()) {
-      player = "O";
-      myTurn = false;
-      setStatus("Joined room: " + roomId);
-      listenToRoom();
-    } else {
+    console.log("Snapshot exists:", snapshot.exists(), snapshot.val());
+    if (!snapshot.exists()) {
       alert("Room not found! Check the ID again.");
-      roomId = null; // reset so we don’t get stuck
+      roomId = null;
+      return;
     }
+
+    player = "O";
+    setStatus("Joined room: " + roomId);
+    listenToRoom();
   });
 }
 
@@ -136,6 +139,7 @@ function checkWinner(board) {
   if (board.every(cell => cell !== "")) return "Draw";
   return null;
 }
+
 
 
 
