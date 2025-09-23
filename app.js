@@ -3,6 +3,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyANCz6-spzPM799qLSHpBqpEWCzIh0N7Pc",
   authDomain: "tictactoe-f6d0b.firebaseapp.com",
   projectId: "tictactoe-f6d0b",
+  databaseURL: "https://tictactoe-f6d0b-default-rtdb.asia-southeast1.firebasedatabase.app",
   storageBucket: "tictactoe-f6d0b.firebasestorage.app",
   messagingSenderId: "535080720497",
   appId: "1:535080720497:web:5153a249ff25dae470e3d0",
@@ -127,3 +128,4 @@ function checkWinner(board) {
   if (board.every(cell => cell !== "")) return "Draw";
   return null;
 }
+
