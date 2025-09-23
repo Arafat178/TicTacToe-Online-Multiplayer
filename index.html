@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe Multiplayer</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+  <h1>Tic Tac Toe Multiplayer</h1>
+
+  <div class="controls">
+    <button onclick="createRoom()">Create Room</button>
+    <input id="roomIdInput" placeholder="Room ID">
+    <button onclick="joinRoom()">Join Room</button>
+  </div>
+
+  <p id="status">Welcome! Create or join a room.</p>
+
+  <div id="board" class="board"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
