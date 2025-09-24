@@ -34,32 +34,31 @@ function setStatus(msg) {
 // ===== STEP 4: Create Room =====
 function createRoom() {
   const customId = document.getElementById("roomIdInput").value.trim();
-  roomId = customId || Math.random().toString(36).substr(2, 6); // custom or random ID
-
+  const playerName = document.getElementById("playerNameInput").value.trim() || "Player X";
+  roomId = customId || Math.random().toString(36).substr(2, 6);
   player = "X";
   myTurn = true;
 
-  // Save room in database
   db.ref("rooms/" + roomId).set({
     board: Array(9).fill(""),
     turn: "X",
-    winner: null
+    winner: null,
+    players: { X: { name: playerName, wins: 0 }, O: { name: null, wins: 0 } },
+    draws: 0
   });
 
   setStatus("Room created! Share this ID: " + roomId);
-  console.log("Room created:", roomId);
   listenToRoom();
 }
 
 // ===== STEP 5: Join Room =====
 function joinRoom() {
   roomId = document.getElementById("roomIdInput").value.trim();
+  const playerName = document.getElementById("playerNameInput").value.trim() || "Player O";
+
   if (!roomId) return alert("Enter a Room ID to join!");
 
-  console.log("Trying to join room:", roomId);
-
   db.ref("rooms/" + roomId).once("value").then(snapshot => {
-    console.log("Snapshot exists?", snapshot.exists(), snapshot.val());
     if (!snapshot.exists()) {
       alert("Room not found! Check the ID.");
       roomId = null;
@@ -68,6 +67,7 @@ function joinRoom() {
 
     player = "O"; // joiner
     myTurn = false;
+    db.ref("rooms/" + roomId + "/players/O/name").set(playerName);
     setStatus("Joined room: " + roomId);
     listenToRoom();
   });
@@ -81,14 +81,42 @@ function listenToRoom() {
 
     updateBoard(data.board);
 
+    const continueBtn = document.getElementById("continueBtn");
+    const popup = document.getElementById("winnerPopup");
+
     if (data.winner) {
+      // Show winner or draw in status
       setStatus(data.winner === "Draw" ? "Draw!" : "Winner: " + data.winner);
       myTurn = false;
-      return;
+      continueBtn.disabled = false; // Enable Continue button after round
+
+      // Show popup
+      if (data.winner === "Draw") {
+        popup.innerText = "Draw!";
+      } else {
+        const winnerName = data.players[data.winner]?.name || data.winner;
+        popup.innerText = `Win: ${winnerName}!`;
+      }
+      popup.classList.remove("hidden");
+      popup.classList.add("show");
+
+    } else {
+      // Active round
+      setStatus(`Turn: ${data.turn} | You are ${player}`);
+      myTurn = (data.turn === player);
+      continueBtn.disabled = true;
+
+      // Hide popup during active round
+      popup.classList.remove("show");
+      popup.classList.add("hidden");
     }
 
-    setStatus(`Turn: ${data.turn} | You are ${player}`);
-    myTurn = (data.turn === player);
+    // Update stats
+    const playerX = data.players.X;
+    const playerO = data.players.O;
+    document.getElementById("playerXStats").innerText = `${playerX.name || "Player X"}: ${playerX.wins} Wins`;
+    document.getElementById("playerOStats").innerText = `${playerO.name || "Player O"}: ${playerO.wins} Wins`;
+    document.getElementById("drawStats").innerText = `Draws: ${data.draws}`;
   });
 }
 
@@ -101,12 +129,28 @@ function makeMove(index) {
     if (current === "") return player;
     return current;
   }, () => {
-    // Update turn and check winner
+    // Play sound
+    const audio = document.getElementById("moveSound");
+    audio.currentTime = 0;
+    audio.play().catch(err => console.log("Sound error:", err));
+
+    // Check winner and update turn
     db.ref("rooms/" + roomId).once("value").then(snapshot => {
       const data = snapshot.val();
       const winner = checkWinner(data.board);
+
       if (winner) {
         db.ref("rooms/" + roomId + "/winner").set(winner);
+
+        // Update stats atomically
+        if (winner === "X") {
+        db.ref(`rooms/${roomId}/players/X/wins`).transaction(prev => (prev || 0) + 1);
+        } else if (winner === "O") {
+        db.ref(`rooms/${roomId}/players/O/wins`).transaction(prev => (prev || 0) + 1);
+        } else if (winner === "Draw") {
+        db.ref(`rooms/${roomId}/draws`).transaction(prev => (prev || 0) + 1);
+        }
+
       } else {
         const nextTurn = (data.turn === "X") ? "O" : "X";
         db.ref("rooms/" + roomId + "/turn").set(nextTurn);
@@ -115,16 +159,53 @@ function makeMove(index) {
   });
 }
 
-// ===== STEP 8: Update Board UI =====
-function updateBoard(board) {
-  document.querySelectorAll(".cell").forEach((cell, i) => {
-    cell.innerText = board[i];
-    if (board[i]) cell.classList.add("taken");
-    else cell.classList.remove("taken");
+// ===== STEP 8: Continue Game =====
+function continueGame() {
+  if (!roomId) return;
+
+  // Get the last round's turn so we can alternate
+  db.ref("rooms/" + roomId + "/turn").once("value").then(snapshot => {
+    const lastTurn = snapshot.val() || "O"; // Default to O if somehow null
+    const nextStarter = (lastTurn === "X") ? "O" : "X"; // flip
+
+    db.ref("rooms/" + roomId).update({
+      board: Array(9).fill(""),
+      turn: nextStarter,
+      winner: null
+    });
+
+    setStatus(`New round started! Turn: ${nextStarter}`);
+    myTurn = (player === nextStarter); // set your turn according to starter
   });
 }
 
-// ===== STEP 9: Check Winner =====
+// pop up window for winner
+function showWinnerPopup(text) {
+  const popup = document.getElementById("winnerPopup");
+  popup.innerText = text;
+  popup.classList.remove("hidden");
+  popup.classList.add("show");
+}
+
+
+
+
+
+// ===== STEP 9: Update Board UI =====
+function updateBoard(board) {
+  document.querySelectorAll(".cell").forEach((cell, i) => {
+    cell.innerText = board[i];
+    cell.classList.remove("taken", "x", "o");
+
+    if (board[i]) {
+      cell.classList.add("taken");
+      if (board[i] === "X") cell.classList.add("x");
+      if (board[i] === "O") cell.classList.add("o");
+    }
+  });
+}
+
+// ===== STEP 10: Check Winner =====
 function checkWinner(board) {
   const wins = [
     [0,1,2],[3,4,5],[6,7,8],
@@ -133,9 +214,7 @@ function checkWinner(board) {
   ];
 
   for (let [a,b,c] of wins) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a];
-    }
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
   }
 
   if (board.every(cell => cell !== "")) return "Draw";
