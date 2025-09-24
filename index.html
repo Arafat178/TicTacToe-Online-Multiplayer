@@ -2,25 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tic Tac Toe Multiplayer</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
+
   <h1>Tic Tac Toe Multiplayer</h1>
 
   <div class="controls">
+    <input type="text" id="roomIdInput" placeholder="Room ID">
+    <input type="text" id="playerNameInput" placeholder="Your Name">
     <button onclick="createRoom()">Create Room</button>
-    <input id="roomIdInput" placeholder="Room ID">
     <button onclick="joinRoom()">Join Room</button>
   </div>
 
-  <p id="status">Welcome! Create or join a room.</p>
+  <div id="status">Waiting...</div>
 
-  <div id="board" class="board"></div>
+  <div class="board" id="board"></div>
 
+  <div id="stats">
+    <p id="playerXStats">Player X: 0 Wins</p>
+    <p id="playerOStats">Player O: 0 Wins</p>
+    <p id="drawStats">Draws: 0</p>
+    <button id="continueBtn" onclick="continueGame()" disabled>Continue</button>
+  </div>
+
+  <div id="winnerPopup" class="hidden"></div>
+
+  <!-- Move sound -->
+  <audio id="moveSound" src="coinS.ogg"></audio>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
