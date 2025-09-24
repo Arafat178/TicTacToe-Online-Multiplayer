@@ -97,6 +97,10 @@ function listenToRoom() {
         const winnerName = data.players[data.winner]?.name || data.winner;
         popup.innerText = `Win: ${winnerName}!`;
       }
+      // Play the end sound
+      const endAudio = document.getElementById("endSound");
+      endAudio.currentTime = 0; // rewind
+      endAudio.play().catch(err => console.log("Sound error:", err));
       popup.classList.remove("hidden");
       popup.classList.add("show");
 
@@ -220,3 +224,4 @@ function checkWinner(board) {
   if (board.every(cell => cell !== "")) return "Draw";
   return null;
 }
+
